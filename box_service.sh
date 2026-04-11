@@ -21,7 +21,10 @@
                 case "$event" in
                     *"from all fwmark 0x0/0xffff iif lo lookup "*)
                         
-                        # 防抖逻辑：如果 ctr.inotify 没在运行，则触发执行并传入网络接口参数
+                        # 防抖逻辑：如果 .inotify 没在运行，则触发执行并传入网络接口参数
+                        if ! pgrep -f "/data/adb/box/scripts/net.inotify" > /dev/null; then
+                            sh /data/adb/box/scripts/net.inotify w> /dev/null 2>&1 &
+                        fi
                         if ! pgrep -f "/data/adb/box/scripts/ctr.inotify" > /dev/null; then
                             sh /data/adb/box/scripts/ctr.inotify w> /dev/null 2>&1 &
                         fi
