@@ -88,7 +88,7 @@ save_wifi_state() {
 
 main() {
   clean_old_logs
-  check_stability_window
+  # check_stability_window
   
   local wifi_status=$(is_wifi_connected)
   local ssid=$(get_current_ssid)

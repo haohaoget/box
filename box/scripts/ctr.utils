@@ -107,20 +107,28 @@ is_bssid_in_list() {
   return 1
 }
 
-# 检测当前真实出网流量是否在使用蜂窝数据（流量）
-is_using_cellular_data() {
+# 检测当前真实流量出口
+real_route_iface() {
   local active_iface
-  
-  # 模拟访问公网，获取系统实际分配的出口网卡名称
-  active_iface=$(ip route get 223.5.5.5 2>/dev/null | busybox awk '{for(i=1;i<=NF;i++) if($i=="dev") {print $(i+1); exit}}')
-  
-  # 如果找到了网卡，并且网卡名字不包含 wlan 或 swlan (Wi-Fi网卡标志)
-  # Android 的流量网卡通常是 rmnet_data0, ccmni0 等
-  if [ -n "$active_iface" ] && ! echo "$active_iface" | grep -qE "wlan|swlan"; then
-    return 0 # 返回成功(0)：当前正在使用流量
-  fi
-  
-  return 1 # 返回失败(1)：当前使用的是 Wi-Fi 或无网络
+  sleep 1
+  # 获取系统实际分配的出口网卡名称
+  active_iface=$(ip rule | awk '/from all fwmark 0x0\/0xffff iif lo lookup / {print $NF; exit}')
+  log_msg "当前网卡: $active_iface"
+  # 根据网卡特征返回对应的网络类型
+  case "$active_iface" in
+    "")
+        # 找不到对应的行，active_iface 为空
+        echo "null"
+        ;;
+    *rmnet_data* | *ccmni*)
+        # 包含 rmnet_data (高通基带) 或 ccmni (联发科基带)
+        echo "cellular_data"
+        ;;
+    *)
+        # 其余情况（包含 wlan0 等）
+        echo "wifi"
+        ;;
+  esac
 }
 
 # 判断是否应该启用服务
@@ -131,8 +139,11 @@ should_enable_service() {
   local matched="false"
   
   # 优先判断真实流量出口
-  if is_using_cellular_data; then
-    return 0
+  local current_network_type=$(real_route_iface)
+  if [ "$current_network_type" = "cellular_data" ]; then
+      return 0
+  elif [ "$current_network_type" = "null" ]; then
+      return 1
   fi
 
   if [ "$wifi_status" = "not_wifi" ]; then
