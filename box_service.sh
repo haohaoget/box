@@ -16,7 +16,7 @@
 
         IP_BIN="/system/bin/ip"
         SH_BIN="/system/bin/sh"
-        if [ -f "$IP_BIN" && -f "$SH_BIN"]; then
+        if [[ -f "$IP_BIN" && -f "$SH_BIN" ]]; then
             # 确保启动前清理可能残留的旧监听进程
             pkill -f "$IP_BIN monitor rule"
             # 替换为基于 Netlink 的内核路由规则监听
