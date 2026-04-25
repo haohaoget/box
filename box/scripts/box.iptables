@@ -884,8 +884,9 @@ start_tproxy() {
   #   [ "${iptables}" = "$IPV" ] && log Warning "未检测到 socket match，跳过部分优化规则（不影响基本功能）"
   # fi
 
-  # 跳过内网，兼容性可用 su -c 'zcat /proc/config.gz | grep -i addrtype' 检查
-  # ${iptables} -t mangle -A BOX_EXTERNAL -m addrtype --dst-type LOCAL -j RETURN
+  # 跳过内网，兼容性可用 su -c 'zcat /proc/config.gz | grep -i addrtype' 检查,可修复coloros删除回家ip后的连接wifi无法通过测试的问题
+  ${iptables} -t mangle -A BOX_EXTERNAL -m addrtype --dst-type LOCAL -j RETURN
+  
   if [ "${iptables}" = "$IPV" ]; then
     for subnet in ${intranet[@]} ; do
       ensure_rule_append mangle BOX_EXTERNAL -d ${subnet} -j RETURN
